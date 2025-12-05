@@ -240,6 +240,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   double _colorOpacity = 1;
   bool _fingerDrawEnabled = false;
+  Type? _lastNonEraserType;
 
   @override
   void initState() {
@@ -315,6 +316,34 @@ class _MyHomePageState extends State<MyHomePage> {
     _transformationController.value = Matrix4.identity();
   }
 
+  void _simulateStylusButtonPress() {
+    final Type current = _drawingController.drawConfig.value.contentType;
+    if (current == Eraser) {
+      _setToolByType(_lastNonEraserType ?? SimpleLine);
+    } else {
+      _lastNonEraserType = current;
+      _drawingController.setPaintContent(Eraser());
+    }
+  }
+
+  void _setToolByType(Type t) {
+    if (t == SimpleLine) {
+      _drawingController.setPaintContent(SimpleLine());
+    } else if (t == SmoothLine) {
+      _drawingController.setPaintContent(SmoothLine());
+    } else if (t == StraightLine) {
+      _drawingController.setPaintContent(StraightLine());
+    } else if (t == Rectangle) {
+      _drawingController.setPaintContent(Rectangle());
+    } else if (t == Circle) {
+      _drawingController.setPaintContent(Circle());
+    } else if (t == Triangle) {
+      _drawingController.setPaintContent(Triangle());
+    } else {
+      _drawingController.setPaintContent(SimpleLine());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -363,6 +392,11 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
               icon: const Icon(Icons.restore_page_rounded),
               onPressed: _restBoard),
+          IconButton(
+            icon: const Icon(Icons.cached),
+            tooltip: 'Simulate Stylus Button',
+            onPressed: _simulateStylusButtonPress,
+          ),
         ],
       ),
       body: AnnotatedRegion<SystemUiOverlayStyle>(
