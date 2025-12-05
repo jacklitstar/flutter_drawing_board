@@ -239,6 +239,13 @@ class _MyHomePageState extends State<MyHomePage> {
       TransformationController();
 
   double _colorOpacity = 1;
+  bool _fingerDrawEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _drawingController.setCouldDrawWithTouch(_fingerDrawEnabled);
+  }
 
   @override
   void dispose() {
@@ -426,6 +433,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     );
                   },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Switch(
+                          value: _fingerDrawEnabled,
+                          onChanged: (bool v) {
+                            setState(() => _fingerDrawEnabled = v);
+                            _drawingController.setCouldDrawWithTouch(v);
+                          },
+                        ),
+                        const Text('Finger draws')
+                      ],
+                    ),
+                    const Text('Stylus draws, inverted stylus erases')
+                  ],
                 ),
               ),
               const Padding(
