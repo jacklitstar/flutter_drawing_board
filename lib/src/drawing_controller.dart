@@ -2,11 +2,17 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'helper/safe_value_notifier.dart';
 import 'paint_contents/eraser.dart';
 import 'paint_contents/paint_content.dart';
 import 'paint_contents/simple_line.dart';
+import 'paint_contents/smooth_line.dart';
+import 'paint_contents/straight_line.dart';
+import 'paint_contents/rectangle.dart';
+import 'paint_contents/circle.dart';
 import 'paint_extension/ex_paint.dart';
 
 /// 绘制参数
@@ -148,6 +154,7 @@ class DrawingController extends ChangeNotifier {
     painter = RePaintNotifier();
     drawConfig = SafeValueNotifier<DrawConfig>(config ?? DrawConfig.def(contentType: SimpleLine));
     setPaintContent(content ?? SimpleLine());
+    _initPencilChannel();
   }
 
   /// 绘制开始点
@@ -172,6 +179,7 @@ class DrawingController extends ChangeNotifier {
 
   /// 最后一次绘制的内容
   late PaintContent _paintContent;
+  Type _lastNonEraserType = SimpleLine;
 
   /// 当前绘制内容
   PaintContent? currentContent;
@@ -308,6 +316,9 @@ class DrawingController extends ChangeNotifier {
     content.paint = drawConfig.value.paint;
     _paintContent = content;
     drawConfig.value = drawConfig.value.copyWith(contentType: content.runtimeType);
+    if (content is! Eraser) {
+      _lastNonEraserType = content.runtimeType;
+    }
   }
 
   /// 添加一条绘制数据
@@ -510,6 +521,45 @@ class DrawingController extends ChangeNotifier {
   /// 刷新底层画板
   void _refreshDeep() {
     realPainter?._refresh();
+  }
+
+  static const MethodChannel _pencilChannel = MethodChannel('apple_pencil');
+
+  void _initPencilChannel() {
+    if (defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+    _pencilChannel.setMethodCallHandler((MethodCall call) async {
+      if (call.method == 'doubleTap') {
+        _toggleEraser();
+      }
+    });
+  }
+
+  void _toggleEraser() {
+    final Type current = drawConfig.value.contentType;
+    if (current == Eraser) {
+      _setToolByType(_lastNonEraserType);
+    } else {
+      _lastNonEraserType = current;
+      setPaintContent(Eraser());
+    }
+  }
+
+  void _setToolByType(Type t) {
+    if (t == SimpleLine) {
+      setPaintContent(SimpleLine());
+    } else if (t == SmoothLine) {
+      setPaintContent(SmoothLine());
+    } else if (t == StraightLine) {
+      setPaintContent(StraightLine());
+    } else if (t == Rectangle) {
+      setPaintContent(Rectangle());
+    } else if (t == Circle) {
+      setPaintContent(Circle());
+    } else {
+      setPaintContent(SimpleLine());
+    }
   }
 
   /// 销毁控制器
