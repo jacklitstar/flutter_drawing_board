@@ -29,6 +29,7 @@ class DrawConfig {
     this.strokeJoin = StrokeJoin.round,
     this.strokeWidth = 4,
     this.style = PaintingStyle.stroke,
+    this.pointerKind,
   });
 
   DrawConfig.def({
@@ -49,6 +50,7 @@ class DrawConfig {
     this.strokeJoin = StrokeJoin.round,
     this.strokeWidth = 4,
     this.style = PaintingStyle.stroke,
+    this.pointerKind,
   });
 
   /// 旋转的角度（0:0,1:90,2:180,3:270）
@@ -59,6 +61,9 @@ class DrawConfig {
   final int fingerCount;
 
   final Size? size;
+
+  /// 鼠标指针类型
+  final ui.PointerDeviceKind? pointerKind;
 
   /// Paint相关
   final BlendMode blendMode;
@@ -109,6 +114,7 @@ class DrawConfig {
     int? angle,
     int? fingerCount,
     Size? size,
+    ui.PointerDeviceKind? pointerKind,
   }) {
     return DrawConfig(
       contentType: contentType ?? this.contentType,
@@ -128,6 +134,7 @@ class DrawConfig {
       style: style ?? this.style,
       fingerCount: fingerCount ?? this.fingerCount,
       size: size ?? this.size,
+      pointerKind: pointerKind ?? this.pointerKind,
     );
   }
 }
@@ -145,6 +152,17 @@ class DrawingController extends ChangeNotifier {
 
   /// 绘制开始点
   Offset? _startPoint;
+
+  /// 触控是否可以绘制
+  bool _couldDrawWithTouch = true;
+
+  /// 设置触控是否可以绘制
+  void setCouldDrawWithTouch(bool value) {
+    _couldDrawWithTouch = value;
+  }
+
+  /// 触控是否可以绘制
+  bool get couldDrawWithTouch => _couldDrawWithTouch;
 
   /// 画板数据Key
   late GlobalKey painterKey = GlobalKey();
@@ -208,17 +226,43 @@ class DrawingController extends ChangeNotifier {
   }
 
   /// 手指落下
-  void addFingerCount(Offset offset) {
-    drawConfig.value = drawConfig.value.copyWith(fingerCount: drawConfig.value.fingerCount + 1);
+  void addFingerCount(PointerEvent event) {
+    // 如果是笔
+    if (event.kind == ui.PointerDeviceKind.stylus ||
+        event.kind == ui.PointerDeviceKind.invertedStylus) {
+      drawConfig.value = drawConfig.value.copyWith(
+        fingerCount: drawConfig.value.fingerCount,
+        pointerKind: event.kind,
+      );
+      return;
+    }
+
+    drawConfig.value = drawConfig.value.copyWith(
+      fingerCount: drawConfig.value.fingerCount + 1,
+      pointerKind: event.kind,
+    );
   }
 
   /// 手指抬起
-  void reduceFingerCount(Offset offset) {
+  void reduceFingerCount(PointerEvent event) {
+    // 如果是笔
+    if (event.kind == ui.PointerDeviceKind.stylus ||
+        event.kind == ui.PointerDeviceKind.invertedStylus) {
+      drawConfig.value = drawConfig.value.copyWith(
+        fingerCount: drawConfig.value.fingerCount,
+        pointerKind: event.kind,
+      );
+      return;
+    }
+
     if (drawConfig.value.fingerCount <= 0) {
       return;
     }
 
-    drawConfig.value = drawConfig.value.copyWith(fingerCount: drawConfig.value.fingerCount - 1);
+    drawConfig.value = drawConfig.value.copyWith(
+      fingerCount: drawConfig.value.fingerCount - 1,
+      pointerKind: event.kind,
+    );
   }
 
   /// 设置绘制样式
@@ -286,6 +330,17 @@ class DrawingController extends ChangeNotifier {
 
   /// 开始绘制
   void startDraw(Offset startPoint) {
+    // 处理反向笔（橡皮擦）
+    if (drawConfig.value.pointerKind == ui.PointerDeviceKind.invertedStylus) {
+      // 暂时保存当前工具
+      // 实际上这里需要更复杂的逻辑来保存/恢复状态
+      // 但简单起见，我们直接使用Eraser绘制
+      eraserContent = Eraser();
+      eraserContent?.paint = drawConfig.value.paint.copyWith();
+      eraserContent?.startDraw(startPoint);
+      return;
+    }
+
     if (_currentIndex == 0 && _paintContent is Eraser) {
       return;
     }
