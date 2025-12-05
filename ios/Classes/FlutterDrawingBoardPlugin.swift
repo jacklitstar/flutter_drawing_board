@@ -13,7 +13,23 @@ public class FlutterDrawingBoardPlugin: NSObject, FlutterPlugin, UIPencilInterac
     if #available(iOS 12.1, *) {
       let interaction = UIPencilInteraction()
       interaction.delegate = instance
-      registrar.viewController?.view.addInteraction(interaction)
+      DispatchQueue.main.async {
+        if let view = FlutterDrawingBoardPlugin.rootView() {
+          view.addInteraction(interaction)
+        }
+      }
+    }
+  }
+
+  private static func rootView() -> UIView? {
+    if #available(iOS 13.0, *) {
+      if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+         let window = scene.windows.first(where: { $0.isKeyWindow }) {
+        return window.rootViewController?.view
+      }
+      return UIApplication.shared.windows.first?.rootViewController?.view
+    } else {
+      return UIApplication.shared.keyWindow?.rootViewController?.view
     }
   }
 
