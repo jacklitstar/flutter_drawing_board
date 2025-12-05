@@ -179,9 +179,9 @@ class _DrawingBoardState extends State<DrawingBoard> {
     }
 
     return Listener(
-      onPointerDown: (PointerDownEvent pde) => _controller.addFingerCount(pde.localPosition),
-      onPointerUp: (PointerUpEvent pue) => _controller.reduceFingerCount(pue.localPosition),
-      onPointerCancel: (PointerCancelEvent pce) => _controller.reduceFingerCount(pce.localPosition),
+      onPointerDown: (PointerDownEvent pde) => _controller.addFingerCount(pde),
+      onPointerUp: (PointerUpEvent pue) => _controller.reduceFingerCount(pue),
+      onPointerCancel: (PointerCancelEvent pce) => _controller.reduceFingerCount(pce),
       child: content,
     );
   }

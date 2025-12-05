@@ -39,8 +39,19 @@ class Painter extends StatelessWidget {
       return;
     }
 
-    drawingController.startDraw(pde.localPosition);
-    onPointerDown?.call(pde);
+    if (pde.kind == ui.PointerDeviceKind.stylus ||
+        pde.kind == ui.PointerDeviceKind.invertedStylus) {
+      drawingController.startDraw(pde.localPosition);
+      onPointerDown?.call(pde);
+      return;
+    }
+
+    // 如果是触控，且开启了触控绘制
+    if (pde.kind == ui.PointerDeviceKind.touch && drawingController.couldDrawWithTouch) {
+      drawingController.startDraw(pde.localPosition);
+      onPointerDown?.call(pde);
+      return;
+    }
   }
 
   /// 手指移动
@@ -103,7 +114,10 @@ class Painter extends StatelessWidget {
         shouldRebuild: (DrawConfig p, DrawConfig n) => p.fingerCount != n.fingerCount,
         builder: (_, DrawConfig config, Widget? child) {
           // 是否能拖动画布
-          final bool isPanEnabled = config.fingerCount > 1;
+          final bool isPanEnabled = config.fingerCount > 1 ||
+              (config.fingerCount == 1 &&
+                  config.pointerKind == ui.PointerDeviceKind.touch &&
+                  !drawingController.couldDrawWithTouch);
 
           return GestureDetector(
             onPanDown: !isPanEnabled ? _onPanDown : null,
