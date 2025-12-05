@@ -46,7 +46,6 @@ class Painter extends StatelessWidget {
       return;
     }
 
-    // 如果是触控，且开启了触控绘制
     if (pde.kind == ui.PointerDeviceKind.touch && drawingController.couldDrawWithTouch) {
       drawingController.startDraw(pde.localPosition);
       onPointerDown?.call(pde);
@@ -113,7 +112,6 @@ class Painter extends StatelessWidget {
         valueListenable: drawingController.drawConfig,
         shouldRebuild: (DrawConfig p, DrawConfig n) => p.fingerCount != n.fingerCount,
         builder: (_, DrawConfig config, Widget? child) {
-          // 是否能拖动画布
           final bool isPanEnabled = config.fingerCount > 1 ||
               (config.fingerCount == 1 &&
                   config.pointerKind == ui.PointerDeviceKind.touch &&

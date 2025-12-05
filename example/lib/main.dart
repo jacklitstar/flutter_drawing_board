@@ -240,11 +240,50 @@ class _MyHomePageState extends State<MyHomePage> {
 
   double _colorOpacity = 1;
   bool _fingerDrawEnabled = false;
+  static const MethodChannel _pencilChannel = MethodChannel('apple_pencil');
 
   @override
   void initState() {
     super.initState();
     _drawingController.setCouldDrawWithTouch(_fingerDrawEnabled);
+    _setupPencilChannel();
+  }
+
+  Type _lastNonEraserType = SimpleLine;
+
+  void _toggleEraser() {
+    final Type current = _drawingController.drawConfig.value.contentType;
+    if (current == Eraser) {
+      _setToolByType(_lastNonEraserType);
+    } else {
+      _lastNonEraserType = current;
+      _drawingController.setPaintContent(Eraser());
+    }
+  }
+
+  void _setToolByType(Type t) {
+    if (t == SimpleLine) {
+      _drawingController.setPaintContent(SimpleLine());
+    } else if (t == SmoothLine) {
+      _drawingController.setPaintContent(SmoothLine());
+    } else if (t == StraightLine) {
+      _drawingController.setPaintContent(StraightLine());
+    } else if (t == Rectangle) {
+      _drawingController.setPaintContent(Rectangle());
+    } else if (t == Circle) {
+      _drawingController.setPaintContent(Circle());
+    } else {
+      _drawingController.setPaintContent(SimpleLine());
+    }
+  }
+
+  void _setupPencilChannel() {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    _pencilChannel.setMethodCallHandler((MethodCall call) async {
+      if (call.method == 'doubleTap') {
+        _toggleEraser();
+      }
+    });
   }
 
   @override

@@ -209,10 +209,16 @@ class DrawingController extends ChangeNotifier {
   Color get getColor => drawConfig.value.color;
 
   /// 能否开始绘制
-  bool get couldStartDraw => drawConfig.value.fingerCount == 0;
+  bool get couldStartDraw =>
+      drawConfig.value.fingerCount == 0 ||
+      drawConfig.value.pointerKind == ui.PointerDeviceKind.stylus ||
+      drawConfig.value.pointerKind == ui.PointerDeviceKind.invertedStylus;
 
   /// 能否进行绘制
-  bool get couldDrawing => drawConfig.value.fingerCount == 1;
+  bool get couldDrawing =>
+      drawConfig.value.pointerKind == ui.PointerDeviceKind.stylus ||
+      drawConfig.value.pointerKind == ui.PointerDeviceKind.invertedStylus ||
+      drawConfig.value.fingerCount == 1;
 
   /// 是否有正在绘制的内容
   bool get hasPaintingContent => currentContent != null || eraserContent != null;
@@ -227,7 +233,6 @@ class DrawingController extends ChangeNotifier {
 
   /// 手指落下
   void addFingerCount(PointerEvent event) {
-    // 如果是笔
     if (event.kind == ui.PointerDeviceKind.stylus ||
         event.kind == ui.PointerDeviceKind.invertedStylus) {
       drawConfig.value = drawConfig.value.copyWith(
@@ -245,7 +250,6 @@ class DrawingController extends ChangeNotifier {
 
   /// 手指抬起
   void reduceFingerCount(PointerEvent event) {
-    // 如果是笔
     if (event.kind == ui.PointerDeviceKind.stylus ||
         event.kind == ui.PointerDeviceKind.invertedStylus) {
       drawConfig.value = drawConfig.value.copyWith(
@@ -330,11 +334,7 @@ class DrawingController extends ChangeNotifier {
 
   /// 开始绘制
   void startDraw(Offset startPoint) {
-    // 处理反向笔（橡皮擦）
     if (drawConfig.value.pointerKind == ui.PointerDeviceKind.invertedStylus) {
-      // 暂时保存当前工具
-      // 实际上这里需要更复杂的逻辑来保存/恢复状态
-      // 但简单起见，我们直接使用Eraser绘制
       eraserContent = Eraser();
       eraserContent?.paint = drawConfig.value.paint.copyWith();
       eraserContent?.startDraw(startPoint);
