@@ -1,5 +1,5 @@
 # About this fork
-##New features:
+## New features:
 1. Add stylus detection (only draw with stylus or draw with finger and stylus)
 2. Add Apple Pencil support. Now you can double tap your apple pencil to switch between last item and eraser.
 
